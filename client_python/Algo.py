@@ -1,3 +1,7 @@
+"""
+This data model will receive data from the server, process it and forward it to the UI model.
+"""
+
 EPSILON = 0.0000001
 
 

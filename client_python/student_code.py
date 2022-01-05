@@ -4,6 +4,7 @@ OOP - Ex4
 Very simple GUI example for python client to communicates with the server and "play the game!"
 
 Edited by Tom and Irit Inbar
+This will be the UI model to get data from the data model and display it
 """
 import sys
 from types import SimpleNamespace
@@ -95,11 +96,7 @@ client.add_agent("{\"id\":0}")
 # this commnad starts the server - the game is running now
 client.start()
 
-"""
-The code below should be improved significantly:
-The GUI and the "algo" are mixed - refactoring using MVC design pattern is required.
-"""
-
+# This info will be used to display 'Catch!' for 60 frames after a pokemon is caught
 current_grade = 0
 catch_timer = 0
 catch_pos = [0,0]
