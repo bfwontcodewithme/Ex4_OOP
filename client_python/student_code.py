@@ -100,6 +100,10 @@ The code below should be improved significantly:
 The GUI and the "algo" are mixed - refactoring using MVC design pattern is required.
 """
 
+current_grade = 0
+catch_timer = 0
+catch_pos = [0,0]
+
 while client.is_running() == 'true':
 
     pokemons = json.loads(client.get_pokemons(),
@@ -130,10 +134,17 @@ while client.is_running() == 'true':
             client.stop_connection()
 
     # refresh surface
-    screen.fill(Color(0, 0, 0))
+    screen.fill(Color(10, 10, 10))
 
     info = client.get_info()
     info_json = json.loads(info)
+
+    # Grade changes, that means we caught one
+    if info_json['GameServer']['grade'] > current_grade:
+        current_grade = info_json['GameServer']['grade']
+        catch_timer = 60
+        catch_pos = [int(agents[0].pos.x), int(agents[0].pos.y)]
+        print(f'catch at {int(agents[0].pos.x)}',{catch_pos[1]})
 
     # draw information
     x = screen.get_width() * 0.08
@@ -169,7 +180,7 @@ while client.is_running() == 'true':
         dest_x = my_scale(G.node.get(dest)['pos'][0], x=True)
         dest_y = my_scale(G.node.get(dest)['pos'][1], y=True)
 
-        # draw the line
+        # draw line between nodes
         pygame.draw.line(screen, Color(170, 170, 255),
                          (src_x, src_y), (dest_x, dest_y))
 
@@ -197,9 +208,21 @@ while client.is_running() == 'true':
     for agent in agents:
         pygame.draw.circle(screen, Color(122, 61, 23),
                            (int(agent.pos.x), int(agent.pos.y)), 10)
-    # draw pokemons (note: should differ (GUI wise) between the up and the down pokemons (currently they are marked in the same way).
+
+    # draw digimons based on their type \ which way they are going
     for p in pokemons:
-        pygame.draw.circle(screen, Color(0, 255, 255), (int(p.pos.x), int(p.pos.y)), 10)
+        if p.type == -1:
+            # Cyan
+            pygame.draw.circle(screen, Color(0, 255, 255), (int(p.pos.x), int(p.pos.y)), 10)
+        else:
+            # Purple / Magenta
+            pygame.draw.circle(screen, Color(255, 0, 255), (int(p.pos.x), int(p.pos.y)), 10)
+
+    if catch_timer > 0:
+        catch_timer -= 1
+        catch_text = FONT.render('Catch!', True, Color(255 - 240 + catch_timer*4, 255 - 240 + catch_timer*4, 255 - 240 + catch_timer*4))
+        catch_rect = catch_text.get_rect(center=(catch_pos[0], catch_pos[1] + 20 - catch_timer/3))
+        screen.blit(catch_text, catch_rect)
 
     # update screen changes
     display.update()
@@ -208,7 +231,7 @@ while client.is_running() == 'true':
     clock.tick(60)
 
     # choose next edge
-    Algo.choose(agents=agents, client=client, G=graph)
+    Algo.choose(agents=agents, client=client, G=graph, pokemons= pokemons)
 
     client.move()
 # game over:

@@ -1,4 +1,7 @@
-def choose(agents, client, G):
+EPSILON = 0.0000001
+
+
+def choose(agents, client, G, pokemons):
     for agent in agents:
         if agent.dest == -1:
             next_node = (agent.src - 1) % len(G.Nodes)
