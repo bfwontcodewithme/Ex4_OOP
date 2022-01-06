@@ -17,7 +17,7 @@ from pygame import gfxdraw
 import pygame
 from pygame import *
 import networkx as nx
-import Algo
+import Algo as al
 
 # init pygame
 WIDTH, HEIGHT = 1080, 720
@@ -59,8 +59,7 @@ for n in graph.Nodes:
 for e in graph.Edges:
     G.add_edge(e.src, e.dest, weight=e.w)
 
-print(G)
-# sys.exit(0)
+myAlgo = al.Algo(G)
 
 # get data proportions
 min_x = min(list(graph.Nodes), key=lambda n: n.pos.x).pos.x
@@ -97,12 +96,15 @@ client.add_agent("{\"id\":0}")
 client.start()
 
 # This info will be used to display 'Catch!' for 60 frames after a pokemon is caught
+current_pokemons = 0
+
 current_grade = 0
 catch_timer = 0
-catch_pos = [0,0]
+catch_pos = [0, 0]
 
 while client.is_running() == 'true':
 
+    # Get agents and pokemons data from client
     pokemons = json.loads(client.get_pokemons(),
                           object_hook=lambda d: SimpleNamespace(**d)).Pokemons
     pokemons = [p.Pokemon for p in pokemons]
@@ -111,9 +113,17 @@ while client.is_running() == 'true':
         p.pos = SimpleNamespace(x=my_scale(
             float(x), x=True), y=my_scale(float(y), y=True))
 
+    # Sort pokemon list by value
+    # Most valuable pokemons will be at the head of the list
+    pokemons.sort(key=lambda x: x.value, reverse=False)
+
     agents = json.loads(client.get_agents(),
                         object_hook=lambda d: SimpleNamespace(**d)).Agents
     agents = [agent.Agent for agent in agents]
+
+    # Sort agent list by speed
+    # Fastest agents will be at the head of the list
+    agents.sort(key=lambda x: x.speed, reverse=False)
 
     for a in agents:
         x, y, _ = a.pos.split(',')
@@ -121,6 +131,7 @@ while client.is_running() == 'true':
             float(x), x=True), y=my_scale(float(y), y=True))
 
     # check events
+    # If Q is pressed or exit button then quit
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
@@ -133,17 +144,24 @@ while client.is_running() == 'true':
     # refresh surface
     screen.fill(Color(10, 10, 10))
 
+    # Get current state info
     info = client.get_info()
     info_json = json.loads(info)
 
-    # Grade changes, that means we caught one
+    # Check if the grade changed, that means we caught a pokemon
     if info_json['GameServer']['grade'] > current_grade:
         current_grade = info_json['GameServer']['grade']
         catch_timer = 60
         catch_pos = [int(agents[0].pos.x), int(agents[0].pos.y)]
-        print(f'catch at {int(agents[0].pos.x)}',{catch_pos[1]})
+        print(f'catch at {int(agents[0].pos.x)}', {catch_pos[1]})
 
-    # draw information
+    # Check if current pokemon number is larger than previous -> need to calculate new path
+    if info_json['GameServer']['pokemons'] > current_pokemons:
+        myAlgo.notify_change(pokemons)
+
+    current_pokemons = info_json['GameServer']['pokemons']
+
+    # draw current game information
     x = screen.get_width() * 0.08
     y = screen.get_height() * 0.025
     text_info = FONT.render('press q to quit', True, Color(255, 255, 255))
@@ -217,8 +235,9 @@ while client.is_running() == 'true':
 
     if catch_timer > 0:
         catch_timer -= 1
-        catch_text = FONT.render('Catch!', True, Color(255 - 240 + catch_timer*4, 255 - 240 + catch_timer*4, 255 - 240 + catch_timer*4))
-        catch_rect = catch_text.get_rect(center=(catch_pos[0], catch_pos[1] + 20 - catch_timer/3))
+        catch_text = FONT.render('Catch!', True, Color(255 - 240 + catch_timer * 4, 255 - 240 + catch_timer * 4,
+                                                       255 - 240 + catch_timer * 4))
+        catch_rect = catch_text.get_rect(center=(catch_pos[0], catch_pos[1] + 20 - catch_timer / 3))
         screen.blit(catch_text, catch_rect)
 
     # update screen changes
@@ -228,7 +247,7 @@ while client.is_running() == 'true':
     clock.tick(60)
 
     # choose next edge
-    Algo.choose(agents=agents, client=client, G=graph, pokemons= pokemons)
+    myAlgo.choose(agents=agents, client=client, G=graph, pokemons=pokemons)
 
     client.move()
 # game over:
