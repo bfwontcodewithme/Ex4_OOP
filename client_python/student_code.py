@@ -9,8 +9,6 @@ This will be the UI model to get data from the data model and display it
 import sys
 from types import SimpleNamespace
 
-import networkx
-
 from client import Client
 import json
 from pygame import gfxdraw
@@ -18,7 +16,6 @@ import pygame
 from pygame import *
 import networkx as nx
 import Algo as al
-
 # init pygame
 WIDTH, HEIGHT = 1080, 720
 
@@ -38,8 +35,6 @@ client.start_connection(HOST, PORT)
 pokemons = client.get_pokemons()
 pokemons_obj = json.loads(pokemons, object_hook=lambda d: SimpleNamespace(**d))
 
-print(pokemons)
-
 graph_json = client.get_graph()
 
 FONT = pygame.font.SysFont('Arial', 20, bold=True)
@@ -48,18 +43,9 @@ FONT = pygame.font.SysFont('Arial', 20, bold=True)
 graph = json.loads(
     graph_json, object_hook=lambda json_dict: SimpleNamespace(**json_dict))
 
-G = nx.DiGraph()
-
-# Convert from json to networkX graph
 for n in graph.Nodes:
     x, y, _ = n.pos.split(',')
     n.pos = SimpleNamespace(x=float(x), y=float(y))
-    G.add_node(n.id, pos=(float(x), float(y)))
-
-for e in graph.Edges:
-    G.add_edge(e.src, e.dest, weight=e.w)
-
-myAlgo = al.Algo(G)
 
 # get data proportions
 min_x = min(list(graph.Nodes), key=lambda n: n.pos.x).pos.x
@@ -85,12 +71,26 @@ def my_scale(data, x=False, y=False):
         return scale(data, 50, screen.get_height() - 50, min_y, max_y)
 
 
+G = nx.DiGraph()
+
+# Convert from json to networkX graph
+for n in graph.Nodes:
+    x = n.pos.x
+    y = n.pos.y
+    G.add_node(n.id, pos=(my_scale(float(x), x=True), my_scale(float(y), y=True)))
+
+for e in graph.Edges:
+    G.add_edge(e.src, e.dest, weight=e.w)
+
+myAlgo = al.Algo(G)
 radius = 15
 
-client.add_agent("{\"id\":0}")
-# client.add_agent("{\"id\":1}")
-# client.add_agent("{\"id\":2}")
-# client.add_agent("{\"id\":3}")
+info = client.get_info()
+info_json = json.loads(info)
+
+for i in range(info_json['GameServer']['agents']):
+    place = "{\"id\":" + str(0) + "}"
+    client.add_agent(place)
 
 # this commnad starts the server - the game is running now
 client.start()
@@ -140,6 +140,8 @@ while client.is_running() == 'true':
             pygame.quit()
             exit(0)
             client.stop_connection()
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            print(pygame.mouse.get_pos())
 
     # refresh surface
     screen.fill(Color(10, 10, 10))
@@ -153,7 +155,7 @@ while client.is_running() == 'true':
         current_grade = info_json['GameServer']['grade']
         catch_timer = 60
         catch_pos = [int(agents[0].pos.x), int(agents[0].pos.y)]
-        print(f'catch at {int(agents[0].pos.x)}', {catch_pos[1]})
+        myAlgo.change = True
 
     # Check if current pokemon number is larger than previous -> need to calculate new path
     if info_json['GameServer']['pokemons'] > current_pokemons:
@@ -190,10 +192,15 @@ while client.is_running() == 'true':
         weight = e[1]['weight']
 
         # scaled positions
-        src_x = my_scale(G.node.get(src)['pos'][0], x=True)
-        src_y = my_scale(G.node.get(src)['pos'][1], y=True)
-        dest_x = my_scale(G.node.get(dest)['pos'][0], x=True)
-        dest_y = my_scale(G.node.get(dest)['pos'][1], y=True)
+        # src_x = my_scale(G.node.get(src)['pos'][0], x=True)
+        # src_y = my_scale(G.node.get(src)['pos'][1], y=True)
+        # dest_x = my_scale(G.node.get(dest)['pos'][0], x=True)
+        # dest_y = my_scale(G.node.get(dest)['pos'][1], y=True)
+
+        src_x = G.node.get(src)['pos'][0]
+        src_y = G.node.get(src)['pos'][1]
+        dest_x = G.node.get(dest)['pos'][0]
+        dest_y = G.node.get(dest)['pos'][1]
 
         # draw line between nodes
         pygame.draw.line(screen, Color(170, 170, 255),
@@ -201,12 +208,9 @@ while client.is_running() == 'true':
 
     # draw nodes
     for n in G.nodes.items():
-        n_x = n[1]['pos'][0]
-        n_y = n[1]['pos'][1]
+        x = n[1]['pos'][0]
+        y = n[1]['pos'][1]
         n_id = str(n[0])
-
-        x = my_scale(n_x, x=True)
-        y = my_scale(n_y, y=True)
 
         # its just to get a nice antialiased circle
         gfxdraw.filled_circle(screen, int(x), int(y),
@@ -244,7 +248,7 @@ while client.is_running() == 'true':
     display.update()
 
     # refresh rate
-    clock.tick(60)
+    clock.tick(20)
 
     # choose next edge
     myAlgo.choose(agents=agents, client=client, G=graph, pokemons=pokemons)
