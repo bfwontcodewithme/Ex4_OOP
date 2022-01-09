@@ -4,13 +4,13 @@ Each simulation plays for about 30 to 60 seconds, and for each simulation a cons
 
 ## How to run
 Open one terminal to run the server: <br>
-'''
+```
 Go to directory with java server and type "java -jar Ex4_server_v0.0.jar n" and for n type a number from 0 to 15. <br>
-'''
+```
 Open another terminal to run the client:<br>
-'''
+```
 Go to the directory with python code and type "python3 student_code.py" <br>
-'''
+```
 A window with simple GUI should then appear and simulate the game, while the terminal prints the current path of the agent if there is just one.
 
 ![DEMO](https://github.com/bfwontcodewithme/Ex4_OOP/blob/main/visual_info/how_it_works.png)
