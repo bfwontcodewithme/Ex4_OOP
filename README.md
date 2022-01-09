@@ -7,6 +7,6 @@ Each simulation plays for about 30 to 60 seconds, and for each simulation a cons
 ## Algorithm implementations
 | Algorithm | Description |
 | --- | --- |
-| 1 | text |
-| 2 | text |
-| 3 | text |
+| Graph database | With json from server, we construct a graph with the networkx library. |
+| Algorithm | Using the networkx library, we calculate an approximation of the optimal route to help us capture as much pokemons as we can. |
+| GUI | With pygame, and the code given to us, we improve upon the GUI by adding timer, setting 'q' as an exit button and displaying more useful information. |
