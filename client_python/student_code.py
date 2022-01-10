@@ -83,6 +83,7 @@ for e in graph.Edges:
     G.add_edge(e.src, e.dest, weight=e.w)
 
 myAlgo = al.Algo(G)
+myAlgo.change = True
 radius = 15
 
 info = client.get_info()
@@ -247,11 +248,11 @@ while client.is_running() == 'true':
     # update screen changes
     display.update()
 
-    # refresh rate
-    clock.tick(20)
-
     # choose next edge
     myAlgo.choose(agents=agents, client=client, G=graph, pokemons=pokemons)
 
     client.move()
+
+    # refresh rate
+    clock.tick(10)
 # game over:
