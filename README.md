@@ -23,3 +23,6 @@ A window with simple GUI should then appear and simulate the game, while the ter
 | Graph database | With json from server, we construct a graph with the networkx library. |
 | Algorithm | Using the networkx library, we calculate an approximation of the optimal route to help us capture as much pokemons as we can. |
 | GUI | With pygame, and the code given to us, we improve upon the GUI by adding timer, setting 'q' as an exit button and displaying more useful information. |
+
+## Short demonstration
+![DEMO](https://github.com/bfwontcodewithme/Ex4_OOP/blob/main/visual_info/demo_gif.gif)
